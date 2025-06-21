@@ -14,7 +14,7 @@ groq = Groq(
 
 def calculate(expression):
     try:
-        # Safer eval with access to only essential built-ins
+        
         return eval(expression, {"__builtins__": None}, {
             "sum": sum,
             "range": range,
@@ -33,7 +33,7 @@ def unit_convert(value, from_unit, to_unit):
         from_unit = from_unit.lower()
         to_unit = to_unit.lower()
 
-        # Linear conversions (all to base unit first, then convert to target)
+        
         length_factors = {
             "mm": 0.001,
             "cm": 0.01,
@@ -58,16 +58,16 @@ def unit_convert(value, from_unit, to_unit):
             ("fahrenheit", "celsius"): lambda x: (x - 32) * 5/9
         }
 
-        # Handle temperature separately
+       
         if (from_unit, to_unit) in temperature:
             return temperature[(from_unit, to_unit)](value)
 
-        # Length conversion
+       
         if from_unit in length_factors and to_unit in length_factors:
             meters = value * length_factors[from_unit]
             return meters / length_factors[to_unit]
 
-        # Weight conversion
+       
         if from_unit in weight_factors and to_unit in weight_factors:
             grams = value * weight_factors[from_unit]
             return grams / weight_factors[to_unit]
@@ -107,14 +107,13 @@ def extract_tool_call(text):
     tool_name = match.group(1).strip()
     raw_args = match.group(2)
 
-    # Parse arguments more carefully
+    
     args = []
     if raw_args.strip():
         # Handle both quoted and unquoted arguments
         arg_pattern = r'"([^"]*)"|\b([^,\s]+)\b'
         matches = re.findall(arg_pattern, raw_args)
         for match in matches:
-            # Take whichever group matched (quoted or unquoted)
             args.append(match[0] if match[0] else match[1])
 
     return tool_name, args
@@ -140,7 +139,7 @@ def ask_model(messages):
 
 MAX_STEPS = 10
 
-# Initialize session state
+
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
@@ -152,7 +151,7 @@ for i, msg in enumerate(st.session_state["messages"]):
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
         
-        # Show thought process for assistant messages
+       
         if msg["role"] == "assistant" and i < len(st.session_state["thought_log"]):
             thoughts = st.session_state["thought_log"][i]
             if thoughts:
@@ -160,10 +159,10 @@ for i, msg in enumerate(st.session_state["messages"]):
                     for thought in thoughts:
                         st.text(thought)
 
-# Handle new user input
+
 query = st.chat_input("Enter your query:")
 if query:
-    # Add user message
+  
     with st.chat_message("user"):
         st.markdown(query)
     
@@ -172,7 +171,7 @@ if query:
         "content": query
     })
     
-    # Initialize conversation messages for this query
+
     conversation_messages = [
         {
             "role": "system",
@@ -208,17 +207,17 @@ Only use tools when necessary. Don't estimate or guess — compute precisely.
     
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            # Multi-step reasoning loop
+            
             for step in range(MAX_STEPS):
                 response = ask_model(conversation_messages)
                 
-                # Check if we have a final answer
+                
                 if "FINAL_ANSWER:" in response:
                     final_answer = response.split("FINAL_ANSWER:")[1].strip()
                     thought_log.append(f"Step {step + 1}: {response}")
                     break
                 
-                # Check if it's a tool call
+               
                 tool_name, args = extract_tool_call(response)
                 if tool_name and tool_name in tools:
                     try:
@@ -226,7 +225,7 @@ Only use tools when necessary. Don't estimate or guess — compute precisely.
                         thought_log.append(f"Step {step + 1}: {response}")
                         thought_log.append(f"Tool Result: {tool_result}")
                         
-                        # Add the tool usage and result to conversation
+                      
                         conversation_messages.append({
                             "role": "assistant",
                             "content": response
@@ -246,7 +245,7 @@ Only use tools when necessary. Don't estimate or guess — compute precisely.
                             "content": f"Tool error: {str(e)}. Please try a different approach."
                         })
                 else:
-                    # Regular reasoning step
+                   
                     thought_log.append(f"Step {step + 1}: {response}")
                     conversation_messages.append({
                         "role": "assistant",
@@ -257,20 +256,20 @@ Only use tools when necessary. Don't estimate or guess — compute precisely.
                         "content": "Please continue with your reasoning or provide the final answer."
                     })
             
-            # Handle case where we didn't get a final answer
+          
             if not final_answer:
                 final_answer = "Could not determine the final answer within the step limit."
         
-        # Show thought process
+        
         if thought_log:
             with st.expander("💭 Thought Process", expanded=True):
                 st.spinner("Thinking...")
                 st.write_stream(thought_generator(thought_log))
         
-        # Show final answer
+       
         st.markdown(f"**Answer:** {final_answer}")
     
-    # Add assistant message to session
+    
     st.session_state.messages.append({
         "role": "assistant",
         "content": f"**Answer:** {final_answer}"
