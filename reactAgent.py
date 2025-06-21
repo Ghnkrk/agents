@@ -5,6 +5,7 @@ import os
 from sympy import sympify
 import re
 import time
+import math
 
 load_dotenv()
 
@@ -18,6 +19,7 @@ def calculate(expression):
         return eval(expression, {"__builtins__": None}, {
             "sum": sum,
             "range": range,
+            "sqrt": math.sqrt,
             "math": __import__("math"),
             "__name__": "__main__"
         })
@@ -190,10 +192,14 @@ Only use tools when necessary. Don't estimate or guess — compute precisely.
 - factorial(n): Compute factorial of a number (e.g., "5")
 
 ### Important Rules:
-1. If you need to use a tool, output TOOL:tool_name(args) on its own line
-2. After using a tool, you'll receive the result and can continue reasoning
-3. When you have the final answer, output FINAL_ANSWER: [your answer]
-4. Be concise but clear in your reasoning
+1. **Always use a tool** for non-trivial expressions (e.g., involving factorials, square roots, logs, or unit math).
+2. Do **not** estimate or manually solve complex math — especially chained operations like `sqrt(factorial(10))`. Always break it down and use tools.
+3. Only output TOOL:tool_name(args) on its own line when using a tool.
+4. After using a tool, you'll receive the result and can continue reasoning.
+5. When you have the final answer, output FINAL_ANSWER: [your answer]
+6. Be concise but clear in your reasoning.
+
+🔒 Precision is critical. If there's *any* doubt about accuracy, use the tool.
 """
         },
         {
